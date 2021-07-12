@@ -7,7 +7,9 @@
 #include <b10/detail/divmod_result.hpp>
 
 namespace b10::detail {
-#if B10_DETAIL_HAVE_INT128
+#if B10_DETAIL_HAVE_INT128 && !B10_DETAIL_HAVE_EXT_INT
+
+#define B10_DETAIL_UINT128_DEFINED 1
 
 using uint128 = unsigned __int128;
 
@@ -29,9 +31,7 @@ auto divmod(uint128 x, uint128 y)
 -> divmod_result<uint128>
 { return {x / y, x % y}; }
 
-#define B10_DETAIL_UINT128_DEFINED 1
-
-#endif // B10_DETAIL_HAVE_INT128
+#endif // B10_DETAIL_HAVE_INT128 && !B10_DETAIL_HAVE_EXT_INT
 } // namespace b10::detail
 
 #endif // !defined(B10_INCLUDED_DETAIL_UINT128_HPP)

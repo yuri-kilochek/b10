@@ -11,6 +11,8 @@
 namespace b10::detail {
 #if B10_DETAIL_HAVE_EXT_INT
 
+#define B10_DETAIL_EXT_UINT_DEFINED 1
+
 template <std::size_t Width>
 using ext_uint = unsigned _ExtInt(Width);
 
@@ -46,8 +48,6 @@ constexpr
 auto divmod(ext_uint<Width> x, ext_uint<Width> y)
 -> divmod_result<ext_uint<Width>>
 { return {x / y, x % y}; }
-
-#define B10_DETAIL_EXT_UINT_DEFINED 1
 
 #endif // B10_DETAIL_HAVE_EXT_INT
 } // namespace b10::detail

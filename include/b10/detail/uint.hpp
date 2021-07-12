@@ -46,7 +46,7 @@ struct selector {
         using type = ext_uint<Width>;
     #else
         using type = wide_uint<uint<Width / 2>>;
-    #else
+    #endif
 };
 
 } // namespace uint_detail
