@@ -7,6 +7,7 @@
 #include <b10/detail/uint64.hpp>
 #include <b10/detail/uint32.hpp>
 #include <b10/detail/auto_reinterpretable.hpp>
+#include <b10/detail/width_of.hpp>
 
 #include <cstdint>
 #include <climits>
@@ -28,7 +29,7 @@ B10_DETAIL_ALWAYS_INLINE
 constexpr
 auto hi(root_t x)
 -> halfroot_t
-{ return x >> (sizeof(root_t) * CHAR_BIT / 2); }
+{ return x >> width_of<halfroot_t>; }
 
 B10_DETAIL_ALWAYS_INLINE
 constexpr
@@ -40,48 +41,50 @@ B10_DETAIL_ALWAYS_INLINE
 constexpr
 auto cat(halfroot_t hi, halfroot_t lo)
 -> root_t
-{ return ((root_t)hi << (sizeof(root_t) * CHAR_BIT / 2)) | lo; }
+{ return ((root_t)hi << width_of<halfroot_t>) | lo; }
 
+template <typename T = root_t>
 B10_DETAIL_ALWAYS_INLINE
 constexpr
-auto addc(root_t x, root_t y, bool& c)
--> root_t
+auto addc(std::type_identity_t<T> x, std::type_dentity_t<T> y, bool& c)
+-> T
 {
     #if B10_DETAIL_HAVE_ADDCARRY_U64
-        if constexpr(std::is_same_v<root_t, uint64>) {
+        if constexpr(std::is_same_v<T, uint64>) {
             if (!std::is_constant_evaluated()) {
-                auto_reinterpretable<root_t> r;
+                auto_reinterpretable<T> r;
                 c = _addcarry_u64(c, x, y, &r);
                 return r;
             }
         }
     #endif
 
-    root_t r_lo = (root_t)lo(x) + lo(y) + c;
+    T r_lo = (T)lo(x) + lo(y) + c;
     c = hi(r_lo);
-    root_t r_hi = (root_t)hi(x) + hi(y) + c;
+    T r_hi = (T)hi(x) + hi(y) + c;
     c = hi(r_hi);
     return cat(lo(r_hi), lo(r_lo));
 }
 
+template <typename T = root_t>
 B10_DETAIL_ALWAYS_INLINE
 constexpr
-auto subb(root_t x, root_t y, bool& b)
--> root_t
+auto subb(std::type_identity_t<T> x, std::type_identity_t<T> y, bool& b)
+-> T
 {
     #if B10_DETAIL_HAVE_SUBBORROW_U64
-        if constexpr(std::is_same_v<root_t, uint64>) {
+        if constexpr(std::is_same_v<T, uint64>) {
             if (!std::is_constant_evaluated()) {
-                auto_reinterpretable<root_t> r;
+                auto_reinterpretable<T> r;
                 b = _subborrow_u64(b, x, y, &r);
                 return r;
             }
         }
     #endif
 
-    root_t r_lo = (root_t)lo(x) - lo(y) - b;
+    T r_lo = (T)lo(x) - lo(y) - b;
     b = hi(r_lo);
-    root_t r_hi = (root_t)hi(x) - hi(y) - b;
+    T r_hi = (T)hi(x) - hi(y) - b;
     b = hi(r_hi);
     return cat(lo(r_hi), lo(r_lo));
 }
@@ -173,8 +176,8 @@ auto wmul(H x, H y)
     #if B10_DETAIL_HAVE_UMUL128
         if constexpr(std::is_same_v<H, uint64>) {
             if (!std::is_constant_evaluated()) {
-                auto_reinterpretable<uint64> r_hi;
-                uint64 r_lo = _umul128(x, y, &r_hi);
+                auto_reinterpretable<H> r_hi;
+                H r_lo = _umul128(x, y, &r_hi);
                 return cat(r_hi, r_lo);
             }
         }
