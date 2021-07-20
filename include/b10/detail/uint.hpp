@@ -151,7 +151,7 @@ auto addc(T x, T y)
 {
     if constexpr(is_wide_v<T>) {
         auto [r_lo, c1] = addc(x.lo, y.lo);
-        auto [r_hi, c2] = addc(x.lo, y.lo, c1);
+        auto [r_hi, c2] = addc(x.hi, y.hi, c1);
         return {cat(r_hi, r_lo), c2};
     } else {
         #if B10_DETAIL_HAVE_BUILTIN_ADD_OVERFLOW
@@ -183,7 +183,7 @@ auto addc(T x, T y, bool c)
 {
     if constexpr(is_wide_v<T>) {
         auto [r_lo, c1] = addc(x.lo, y.lo, c);
-        auto [r_hi, c2] = addc(x.lo, y.lo, c1);
+        auto [r_hi, c2] = addc(x.hi, y.hi, c1);
         return {cat(r_hi, r_lo), c2};
     } else {
         #if B10_DETAIL_HAVE_ADDCARRY_U64
@@ -210,7 +210,7 @@ auto subb(T x, T y)
 {
     if constexpr(is_wide_v<T>) {
         auto [r_lo, b1] = subb(x.lo, y.lo);
-        auto [r_hi, b2] = subb(x.lo, y.lo, b1);
+        auto [r_hi, b2] = subb(x.hi, y.hi, b1);
         return {cat(r_hi, r_lo), b2};
     } else {
         #if B10_DETAIL_HAVE_BUILTIN_SUB_OVERFLOW
@@ -242,7 +242,7 @@ auto subb(T x, T y, bool b)
 {
     if constexpr(is_wide_v<T>) {
         auto [r_lo, b1] = subb(x.lo, y.lo, b);
-        auto [r_hi, b2] = subb(x.lo, y.lo, b1);
+        auto [r_hi, b2] = subb(x.hi, y.hi, b1);
         return {cat(r_hi, r_lo), b2};
     } else {
         #if B10_DETAIL_HAVE_SUBBORROW_U64
