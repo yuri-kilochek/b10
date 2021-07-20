@@ -5,8 +5,8 @@ namespace b10::detail {
 
 template <typename T>
 struct divmod_result {
-    T q;
-    T r;
+    T quotient;
+    T remainder;
 };
 
 } // namespace b10::detail
