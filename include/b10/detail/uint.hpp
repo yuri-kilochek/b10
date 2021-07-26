@@ -1,7 +1,7 @@
-#ifndef B10_INCLUDED_DETAIL_INT_HPP
-#define B10_INCLUDED_DETAIL_INT_HPP
+#ifndef B10_INCLUDED_DETAIL_UINT_HPP
+#define B10_INCLUDED_DETAIL_UINT_HPP
 
-#include <b10/detail/builtin_int.hpp>
+#include <b10/detail/builtin_uint.hpp>
 
 #include <b10/detail/thirdparty/hedley.h>
 
@@ -10,7 +10,7 @@
 #include <concepts>
 
 namespace b10::detail {
-namespace int_detail {
+namespace uint_detail {
 
 template <typename Half, std::endian = std::endian::native>
 struct storage;
@@ -27,7 +27,7 @@ struct storage<Half, std::endian::big> {
     Half low_half;
 };
 
-} // namespace int_detail
+} // namespace uint_detail
 
 template <std::size_t Width>
 struct uint
@@ -58,8 +58,6 @@ struct uint
         return *this;
     }
 
-    // TODO: assignment from int_
-
     template <std::convertible_to<half_type> T>
     HEDLEY_ALWAYS_INLINE constexpr
     auto operator=(T x)
@@ -79,9 +77,9 @@ struct uint
 };
 
 template <std::size_t Width>
-requires { typename unsigned_builtin_int<Width>; }
+requires { typename builtin_uint<Width>; }
 struct uint {
-    using builtin_type = unsigned_builtin_int<Width>;
+    using builtin_type = builtin_uint<Width>;
 
     builtin_type builtin;
 
@@ -106,8 +104,6 @@ struct uint {
         }
         return *this;
     }
-    
-    // TODO: assignment from int_
 
     template <std::convertible_to<builtin_type> T>
     HEDLEY_ALWAYS_INLINE constexpr
