@@ -30,24 +30,24 @@ struct storage<Half, std::endian::big> {
 } // namespace int_detail
 
 template <std::size_t Width>
-struct unsigned_int
-: int_detail::storage<unsigned_int<Width / 2>>
+struct uint
+: int_detail::storage<uint<Width / 2>>
 {
-    using half_type = unsigned_int<Width / 2>;
+    using half_type = uint<Width / 2>;
 
-    unsigned_int()
+    uint()
     = default;
 
     template <typename T>
     HEDLEY_ALWAYS_INLINE constexpr
-    unsigned_int(T x)
+    uint(T x)
     requires { *this = x; }
     { *this = x; }
 
     template <std::size_t OtherWidth>
     HEDLEY_ALWAYS_INLINE constexpr
-    auto operator=(unsigned_int<OtherWidth> other)
-    -> unsigned_int<Width>&
+    auto operator=(uint<OtherWidth> other)
+    -> uint<Width>&
     {
         if constexpr(OtherWidth < Width) {
             low_half = other;
@@ -58,12 +58,12 @@ struct unsigned_int
         return *this;
     }
 
-    // TODO: assignment from signed_int
+    // TODO: assignment from int_
 
     template <std::convertible_to<half_type> T>
     HEDLEY_ALWAYS_INLINE constexpr
     auto operator=(T x)
-    -> unsigned_int<Width>&
+    -> uint<Width>&
     {
         low_half = x;
         high_half = -(x < 0);
@@ -80,24 +80,24 @@ struct unsigned_int
 
 template <std::size_t Width>
 requires { typename unsigned_builtin_int<Width>; }
-struct unsigned_int {
+struct uint {
     using builtin_type = unsigned_builtin_int<Width>;
 
     builtin_type builtin;
 
-    unsigned_int()
+    uint()
     = default;
 
     template <typename T>
     HEDLEY_ALWAYS_INLINE constexpr
-    unsigned_int(T x)
+    uint(T x)
     requires { *this = x; }
     { *this = x; }
 
     template <std::size_t OtherWidth>
     HEDLEY_ALWAYS_INLINE constexpr
-    auto operator=(unsigned_int<OtherWidth> other)
-    -> unsigned_int<Width>&
+    auto operator=(uint<OtherWidth> other)
+    -> uint<Width>&
     {
         if constexpr(requires { other.builtin; }) {
             builtin = other.builtin;
@@ -107,12 +107,12 @@ struct unsigned_int {
         return *this;
     }
     
-    // TODO: assignment from signed_int
+    // TODO: assignment from int_
 
     template <std::convertible_to<builtin_type> T>
     HEDLEY_ALWAYS_INLINE constexpr
     auto operator=(T x)
-    -> unsigned_int<Width>&
+    -> uint<Width>&
     {
         builtin = x; 
         return *this;
