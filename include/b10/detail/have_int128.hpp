@@ -1,0 +1,8 @@
+#ifndef B10_INCLUDED_DETAIL_HAVE_INT128_HPP
+#define B10_INCLUDED_DETAIL_HAVE_INT128_HPP
+
+#if defined(__SIZEOF_INT128__)
+    #define B10_DETAIL_HAVE_INT128 1
+#endif
+
+#endif
