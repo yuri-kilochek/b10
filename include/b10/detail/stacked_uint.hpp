@@ -30,8 +30,11 @@ struct storage<Half, std::endian::big> {
 
 template <typename Half>
 struct stacked_uint
-: stacked_uint_detail::storage<Half>
+: private stacked_uint_detail::storage<Half>
 {
+    using stacked_uint_detail::storage<Half>::hi;
+    using stacked_uint_detail::storage<Half>::lo;
+
     stacked_uint()
     = default;
 
