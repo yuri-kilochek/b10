@@ -11,4 +11,4 @@ struct divmod_result {
 
 } // namespace b10::detail
 
-#endif // !defined(B10_INCLUDED_DETAIL_DIVMOD_RESULT_HPP)
+#endif
