@@ -18,29 +18,27 @@ namespace builtin_uint_detail {
 template <std::size_t Width>
 struct select;
 
-template <>
-struct select<32> {
-    using type = std::uint32_t;
-};
-
-template <>
-struct select<64> {
-    using type = std::uint64_t;
-};
-
-#if B10_DETAIL_HAVE_INT128 && !B10_DETAIL_HAVE_EXT_INT
+#if B10_DETAIL_HAVE_EXT_INT
+    template <std::size_t Width>
+    struct select {
+        using type = unsigned _ExtInt(Width);
+    };
+#elif B10_DETAIL_HAVE_INT128
     template <>
     struct select<128> {
         using type = unsigned __int128;
     };
 #endif
 
-#if B10_DETAIL_HAVE_EXT_INT
-    template <std::size_t Width>
-    struct select {
-        using type = unsigned _ExtInt(Width);
-    };
-#endif
+template <>
+struct select<64> {
+    using type = std::uint64_t;
+};
+
+template <>
+struct select<32> {
+    using type = std::uint32_t;
+};
 
 } // namespace builtin_uint_detail
 
@@ -61,13 +59,13 @@ template <builtin_unsigned_integral X, builtin_unsigned_integral Y>
 requires (width_of<X> == 2 * width_of<Y>)
 HEDLEY_ALWAYS_INLINE constexpr
 auto wdivmod(X x, Y y)
--> divmod_result<builtin_uint<width_of<Y>>>
+-> divmod_result<Y>
 { return {x / y, x % y}; }
 
 template <builtin_unsigned_integral T>
 HEDLEY_ALWAYS_INLINE constexpr
 auto divmod(T x, T y)
--> divmod_result<builtin_uint<width_of<T>>>
+-> divmod_result<T>
 { return {x / y, x % y}; }
 
 } // namespace b10::detail

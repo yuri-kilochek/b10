@@ -2,11 +2,11 @@
 #define B10_INCLUDED_DETAIL_STACKED_UINT_HPP
 
 #include <b10/detail/width_of.hpp>
+#include <b10/detail/builtin_uint.hpp>
 
 #include <b10/detail/thirdparty/hedley.h>
 
 #include <bit>
-#include <concepts>
 
 namespace b10::detail {
 namespace stacked_uint_detail {
@@ -58,18 +58,18 @@ struct stacked_uint
         return *this;
     }
 
-    template <std::convertible_to<Half> T>
+    template <builtin_unsigned_integral T>
     HEDLEY_ALWAYS_INLINE constexpr
     auto operator=(T x)
     -> stacked_uint<Width>&
     {
         lo = x;
-        hi = -(x < 0);
+        hi = 0;
+
         return *this;
     }
 
-    template <typename T>
-    requires std::convertible_to<Half, T>
+    template <builtin_unsigned_integral T>
     HEDLEY_ALWAYS_INLINE constexpr
     operator T() const {
         return lo;
@@ -78,14 +78,39 @@ struct stacked_uint
 
 template <typename Half>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator<=>(stacked_uint<Half> x, stacked_uint<Half> y)
--> std::strong_ordering
-{
-    if (const auto ordering = x.hi <=> y.hi; ordering != 0)
-        return ordering;
+auto operator==(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi == y.hi && x.lo == y.lo; }
 
-    return x.lo <=> y.lo;
-}
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator!=(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi != y.hi || x.lo != y.lo; }
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator<(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi < y.hi || x.hi == y.hi && x.lo < y.lo; }
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator>(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi > y.hi || x.hi == y.hi && x.lo > y.lo; }
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator<=(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi < y.hi || x.hi == y.hi && x.lo <= y.lo; }
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator<=(stacked_uint<Half> x, stacked_uint<Half> y)
+-> bool
+{ return x.hi > y.hi || x.hi == y.hi && x.lo >= y.lo; }
 
 template <typename Half>
 HEDLEY_ALWAYS_INLINE constexpr
