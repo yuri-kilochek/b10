@@ -48,8 +48,7 @@ template <std::size_t Width>
 using builtin_uint = builtin_uint_detail::select<Width>::type;
 
 template <typename T>
-concept builtin_unsigned_integral =
-    std::unsigned_integral<T> || std::same_as<T, builtin_uint<width_of<T>>>;
+concept builtin_unsigned_integral = std::same_as<T, builtin_uint<width_of<T>>>;
 
 template <builtin_unsigned_integral T>
 requires requires { typename builtin_uint<width_of<T> * 2>; }
