@@ -108,7 +108,7 @@ auto operator<=(stacked_uint<Half> x, stacked_uint<Half> y)
 
 template <typename Half>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator<=(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator>=(stacked_uint<Half> x, stacked_uint<Half> y)
 -> bool
 { return x.hi > y.hi || x.hi == y.hi && x.lo >= y.lo; }
 
