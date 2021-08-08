@@ -192,6 +192,59 @@ auto operator>>(stacked_uint<Half> x, std::size_t y)
     return r;
 }
 
+namespace stacked_uint_detail {
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto addc(T x, T y)
+-> addc_result<T>
+{
+    T r = x + y;
+    return {r, r < x};
+}
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto addc(T x, T y, bool c)
+-> addc_result<T>
+{
+    auto [t, c1] = addc(x, y);
+    auto [r, c2] = addc(t, c);
+    return {r, c1 | c2};
+}
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto addc(stacked_uint<Half> x, stacked_uint<Half> y)
+-> addc_result<T>
+{
+    auto [r_lo, c1] = addc(x.lo, y.lo);
+    auto [r_hi, c2] = addc(x.hi, y.hi, c1);
+    return {cat(r_hi, r_lo), c2};
+}
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto addc(stacked_uint<Half> x, stacked_uint<Half> y, bool c)
+-> addc_result<T>
+{
+    auto [r_lo, c1] = addc(x.lo, y.lo, c);
+    auto [r_hi, c2] = addc(x.hi, y.hi, c1);
+    return {cat(r_hi, r_lo), c2};
+}
+
+} // namespace stacked_uint_detail
+
+template <typename Half>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator+(stacked_uint<Half> x, stacked_uint<Half> y)
+-> stacked_uint<Half>
+{
+    auto [r_lo, c] = addc(x.lo, y.lo);
+    auto r_hi = x.hi + y.hi + c;
+    return cat(r_hi, r_lo);
+}
+
 } // namespace b10::detail
 
 #endif
