@@ -44,17 +44,15 @@ struct stacked_uint
     requires { *this = x; }
     { *this = x; }
 
-    template <typename OtherHalf>
+    template <typename XHalf>
+    requires (width_of<XHalf> < width_of<Half>)
     HEDLEY_ALWAYS_INLINE constexpr
-    auto operator=(stacked_uint<OtherHalf> x)
+    auto operator=(stacked_uint<XHalf> x)
     -> stacked_uint<Half>&
     {
-        if constexpr(width_of<OtherHalf> < width_of<Half>) {
-            lo = x;
-            hi = 0;
-        } else {
-            *this = x.lo;
-        }
+        lo = x;
+        hi = 0;
+
         return *this;
     }
 
@@ -67,6 +65,13 @@ struct stacked_uint
         hi = 0;
 
         return *this;
+    }
+
+    template <typename RHalf>
+    requires (width_of<RHalf> < width_of<Half>)
+    HEDLEY_ALWAYS_INLINE constexpr
+    operator stacked_uint<RHalf>() const {
+        return lo;
     }
 
     template <builtin_unsigned_integral T>
