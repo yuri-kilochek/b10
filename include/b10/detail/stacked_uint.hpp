@@ -11,44 +11,50 @@
 namespace b10::detail {
 namespace stacked_uint_detail {
 
-template <typename Half, std::endian = std::endian::native>
+template <typename T, std::endian = std::endian::native>
 struct storage;
 
-template <typename Half>
-struct storage<Half, std::endian::little> {
-    Half lo;
-    Half hi;
+template <typename T>
+struct storage<T, std::endian::little> {
+    T lo;
+    T hi;
 };
 
-template <typename Half>
-struct storage<Half, std::endian::big> {
-    Half hi;
-    Half lo;
+template <typename T>
+struct storage<T, std::endian::big> {
+    T hi;
+    T lo;
 };
 
 } // namespace stacked_uint_detail
 
-template <typename Half>
+template <typename T>
 struct stacked_uint
-: private stacked_uint_detail::storage<Half>
+: private stacked_uint_detail::storage<T>
 {
-    using stacked_uint_detail::storage<Half>::hi;
-    using stacked_uint_detail::storage<Half>::lo;
+    using stacked_uint_detail::storage<T>::hi;
+    using stacked_uint_detail::storage<T>::lo;
 
     stacked_uint()
     = default;
 
-    template <typename T>
     HEDLEY_ALWAYS_INLINE constexpr
-    stacked_uint(T x)
-    requires { *this = x; }
-    { *this = x; }
+    stacked_uint(builtin_unsigned_integral auto x) {
+        lo = x;
+        hi = 0;
+    }
 
-    template <typename XHalf>
-    requires (width_of<XHalf> < width_of<Half>)
+    template <typename U>
+    requires (width_of<U> < width_of<T>)
     HEDLEY_ALWAYS_INLINE constexpr
-    auto operator=(stacked_uint<XHalf> x)
-    -> stacked_uint<Half>&
+    stacked_uint(unsigned_uint<U> x) {
+        lo = x;
+        hi = 0;
+    }
+
+    HEDLEY_ALWAYS_INLINE constexpr
+    auto operator=(builtin_unsigned_integral auto x)
+    -> stacked_uint<T>&
     {
         lo = x;
         hi = 0;
@@ -56,10 +62,11 @@ struct stacked_uint
         return *this;
     }
 
-    template <builtin_unsigned_integral T>
+    template <typename U>
+    requires (width_of<U> < width_of<T>)
     HEDLEY_ALWAYS_INLINE constexpr
-    auto operator=(T x)
-    -> stacked_uint<Width>&
+    auto operator=(stacked_uint<U> x)
+    -> stacked_uint<T>&
     {
         lo = x;
         hi = 0;
@@ -67,62 +74,101 @@ struct stacked_uint
         return *this;
     }
 
-    template <typename RHalf>
-    requires (width_of<RHalf> < width_of<Half>)
+    template <builtin_unsigned_integral U>
     HEDLEY_ALWAYS_INLINE constexpr
-    operator stacked_uint<RHalf>() const {
+    operator U() const {
         return lo;
     }
 
-    template <builtin_unsigned_integral T>
+    template <typename U>
+    requires (width_of<U> < width_of<T>)
     HEDLEY_ALWAYS_INLINE constexpr
-    operator T() const {
+    operator stacked_uint<U>() const {
         return lo;
     }
 };
 
-template <typename Half>
+namespace stacked_uint_detail {
+
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator==(stacked_uint<Half> x, stacked_uint<Half> y)
+auto lo(T x) {
+    if constexpr(builtin_unsigned_integral<T>) {
+        return builtin_uint<width_of<T> / 2>(x);
+    } else {
+        return x.lo;
+    }
+}
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto hi(T x) {
+    if constexpr(builtin_unsigned_integral<T>) {
+        return builtin_uint<width_of<T> / 2>(x >> (width_of<T> / 2));
+    } else {
+        return x.hi;
+    }
+}
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto cat(T hi, T lo) {
+    if constexpr(requires { typename builtin_uint<width_of<T> * 2>; }) {
+        return (builtin_uint<width_of<T> * 2>(hi) << width_of<T>) | lo;
+    } else {
+        stacked_uint<T> r;
+
+        r.lo = lo;
+        r.hi = hi;
+
+        return r;
+    }
+}
+
+} // namespace stacked_uint_detail
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator==(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi == y.hi && x.lo == y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator!=(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator!=(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi != y.hi || x.lo != y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator<(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator<(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi < y.hi || x.hi == y.hi && x.lo < y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator>(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator>(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi > y.hi || x.hi == y.hi && x.lo > y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator<=(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator<=(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi < y.hi || x.hi == y.hi && x.lo <= y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator>=(stacked_uint<Half> x, stacked_uint<Half> y)
+auto operator>=(stacked_uint<T> x, stacked_uint<T> y)
 -> bool
 { return x.hi > y.hi || x.hi == y.hi && x.lo >= y.lo; }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator~(stacked_uint<Half> x)
--> stacked_uint<Half>
+auto operator~(stacked_uint<T> x)
+-> stacked_uint<T>
 {
-    stacked_uint<Half> r;
+    stacked_uint<T> r;
 
     r.lo = ~x.lo;
     r.hi = ~x.hi;
@@ -130,12 +176,12 @@ auto operator~(stacked_uint<Half> x)
     return r;
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator&(stacked_uint<Half> x, stacked_uint<Half> y)
--> stacked_uint<Half>
+auto operator&(stacked_uint<T> x, stacked_uint<T> y)
+-> stacked_uint<T>
 {
-    stacked_uint<Half> r;
+    stacked_uint<T> r;
 
     r.lo = x.lo & y.lo;
     r.hi = x.hi & y.hi;
@@ -143,12 +189,12 @@ auto operator&(stacked_uint<Half> x, stacked_uint<Half> y)
     return r;
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator|(stacked_uint<Half> x, stacked_uint<Half> y)
--> stacked_uint<Half>
+auto operator|(stacked_uint<T> x, stacked_uint<T> y)
+-> stacked_uint<T>
 {
-    stacked_uint<Half> r;
+    stacked_uint<T> r;
 
     r.lo = x.lo | y.lo;
     r.hi = x.hi | y.hi;
@@ -156,36 +202,36 @@ auto operator|(stacked_uint<Half> x, stacked_uint<Half> y)
     return r;
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator<<(stacked_uint<Half> x, std::size_t y)
--> stacked_uint<Half>
+auto operator<<(stacked_uint<T> x, std::size_t y)
+-> stacked_uint<T>
 {
-    stacked_uint<Half> r;
+    stacked_uint<T> r;
 
-    if (y < width_of<Half>) {
+    if (y < width_of<T>) {
         r.lo = x.lo << y;
-        r.hi = (x.hi << y) | (x.lo >> (width_of<Half> - y));
+        r.hi = (x.hi << y) | (x.lo >> (width_of<T> - y));
     } else {
         r.lo = 0;
-        r.hi = x.lo << (y - width_of<Half>);
+        r.hi = x.lo << (y - width_of<T>);
     }
 
     return r;
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator>>(stacked_uint<Half> x, std::size_t y)
--> stacked_uint<Half>
+auto operator>>(stacked_uint<T> x, std::size_t y)
+-> stacked_uint<T>
 {
-    stacked_uint<Half> r;
+    stacked_uint<T> r;
 
-    if (y < width_of<Half>) {
-        r.lo = (r.hi << (width_of<Half> - y)) | (x.lo >> y);
+    if (y < width_of<T>) {
+        r.lo = (r.hi << (width_of<T> - y)) | (x.lo >> y);
         r.hi = x.hi >> y;
     } else {
-        r.lo = r.hi >> (y - width_of<Half>);
+        r.lo = r.hi >> (y - width_of<T>);
         r.hi = 0;
     }
 
@@ -194,12 +240,18 @@ auto operator>>(stacked_uint<Half> x, std::size_t y)
 
 namespace stacked_uint_detail {
 
+template <typename T>
+struct addc_result {
+    T value;
+    bool carry;
+};
+
 template <builtin_unsigned_integral T>
 HEDLEY_ALWAYS_INLINE constexpr
 auto addc(T x, T y)
 -> addc_result<T>
 {
-    T r = x + y;
+    auto r = x + y;
     return {r, r < x};
 }
 
@@ -213,9 +265,9 @@ auto addc(T x, T y, bool c)
     return {r, c1 | c2};
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto addc(stacked_uint<Half> x, stacked_uint<Half> y)
+auto addc(stacked_uint<T> x, stacked_uint<T> y)
 -> addc_result<T>
 {
     auto [r_lo, c1] = addc(x.lo, y.lo);
@@ -223,9 +275,9 @@ auto addc(stacked_uint<Half> x, stacked_uint<Half> y)
     return {cat(r_hi, r_lo), c2};
 }
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto addc(stacked_uint<Half> x, stacked_uint<Half> y, bool c)
+auto addc(stacked_uint<T> x, stacked_uint<T> y, bool c)
 -> addc_result<T>
 {
     auto [r_lo, c1] = addc(x.lo, y.lo, c);
@@ -235,11 +287,13 @@ auto addc(stacked_uint<Half> x, stacked_uint<Half> y, bool c)
 
 } // namespace stacked_uint_detail
 
-template <typename Half>
+template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto operator+(stacked_uint<Half> x, stacked_uint<Half> y)
--> stacked_uint<Half>
+auto operator+(stacked_uint<T> x, stacked_uint<T> y)
+-> stacked_uint<T>
 {
+    using namespace stacked_uint_detail;
+
     auto [r_lo, c] = addc(x.lo, y.lo);
     auto r_hi = x.hi + y.hi + c;
     return cat(r_hi, r_lo);
