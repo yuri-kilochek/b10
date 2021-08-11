@@ -50,7 +50,7 @@ struct stacked_uint
     template <typename U>
     requires (width_of<U> < width_of<T>)
     HEDLEY_ALWAYS_INLINE constexpr
-    stacked_uint(unsigned_uint<U> x) {
+    stacked_uint(stacked_uint<U> x) {
         lo = x;
         hi = 0;
     }
