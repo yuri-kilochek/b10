@@ -4,6 +4,7 @@
 #include <b10/detail/width_of.hpp>
 #include <b10/detail/builtin_uint.hpp>
 #include <b10/detail/have_builtin_add_overflow.hpp>
+#include <b10/detail/have_builtin_sub_overflow.hpp>
 
 #include <b10/detail/thirdparty/hedley.h>
 
@@ -242,73 +243,41 @@ auto operator>>(stacked_uint<T> x, std::size_t y)
 
 namespace stacked_uint_detail {
 
-template <typename T>
-struct addc_result {
-    T value;
-    bool carry;
-};
-
 template <builtin_unsigned_integral T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto addc(T x, T y)
--> addc_result<T>
+auto add(T x, T y, bool& c)
+-> T
 {
     #if B10_DETAIL_HAVE_BUILTIN_ADD_OVERFLOW
         if (!std::is_constant_evaluated()) {
+            T t;
+            bool c1 = __builtin_add_overflow(x, y, &t);
             T r;
-            bool c = __builtin_add_overflow(x, y, &r);
-            return {r, c};
+            bool c2 = __builtin_add_overflow(t, c, &r);
+            c = c1 | c2;
+            return r;
         }
     #endif
 
-    auto r = x + y;
-    return {r, r < x};
-}
-
-template <builtin_unsigned_integral T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto addc(T x, T y, bool c)
--> addc_result<T>
-{
-    auto [t, c1] = addc(x, y);
-    auto [r, c2] = addc(t, c);
-    return {r, c1 | c2};
-}
-
-template <builtin_unsigned_integral T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto add(T x, T y, bool c)
--> T
-{ return x + y + c; }
-
-template <typename T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto addc(stacked_uint<T> x, stacked_uint<T> y)
--> addc_result<stacked_uint<T>>
-{
-    auto [r_lo, c1] = addc(x.lo, y.lo);
-    auto [r_hi, c2] = addc(x.hi, y.hi, c1);
-    return {cat(r_hi, r_lo), c2};
+    T t = x + y;
+    bool c1 = t < x;
+    T r = t + c;
+    bool c2 = r < t;
+    c = c1 | c2;
+    return r;
 }
 
 template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto addc(stacked_uint<T> x, stacked_uint<T> y, bool c)
--> addc_result<stacked_uint<T>>
-{
-    auto [r_lo, c1] = addc(x.lo, y.lo, c);
-    auto [r_hi, c2] = addc(x.hi, y.hi, c1);
-    return {cat(r_hi, r_lo), c2};
-}
-
-template <typename T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto add(stacked_uint<T> x, stacked_uint<T> y, bool c)
+auto add(stacked_uint<T> x, stacked_uint<T> y, bool& c)
 -> stacked_uint<T>
 {
-    auto [r_lo, c1] = addc(x.lo, y.lo, c);
-    auto r_hi = add(x.hi, y.hi, c1);
-    return cat(r_hi, r_lo);
+    stacked_uint<T> r;
+
+    r.lo = add(x.lo, y.lo, c);
+    r.hi = add(x.hi, y.hi, c);
+
+    return r;
 }
 
 } // namespace stacked_uint_detail
@@ -318,11 +287,58 @@ HEDLEY_ALWAYS_INLINE constexpr
 auto operator+(stacked_uint<T> x, stacked_uint<T> y)
 -> stacked_uint<T>
 {
-    using namespace stacked_uint_detail;
+    bool c = 0;
+    return stacked_uint_detail::add(x, y, c);
+}
 
-    auto [r_lo, c] = addc(x.lo, y.lo);
-    auto r_hi = add(x.hi, y.hi, c);
-    return cat(r_hi, r_lo);
+namespace stacked_uint_detail {
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto subtract(T x, T y, bool& b)
+-> T
+{
+    #if B10_DETAIL_HAVE_BUILTIN_SUB_OVERFLOW
+        if (!std::is_constant_evaluated()) {
+            T t;
+            bool b1 = __builtin_sub_overflow(x, y, &t);
+            T r;
+            bool b2 = __builtin_sub_overflow(t, b, &r);
+            b = b1 | b2;
+            return r;
+        }
+    #endif
+
+    T t = x - y;
+    bool b1 = t > x;
+    T r = t - b;
+    bool b2 = r > t;
+    b = b1 | b2;
+    return r;
+}
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto subtract(stacked_uint<T> x, stacked_uint<T> y, bool& b)
+-> stacked_uint<T>
+{
+    stacked_uint<T> r;
+
+    r.lo = subtract(x.lo, y.lo, c);
+    r.hi = subtract(x.hi, y.hi, c);
+
+    return r;
+}
+
+} // namespace stacked_uint_detail
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto operator-(stacked_uint<T> x, stacked_uint<T> y)
+-> stacked_uint<T>
+{
+    bool b = 0;
+    return stacked_uint_detail::subtract(x, y, b);
 }
 
 } // namespace b10::detail
