@@ -3,10 +3,12 @@
 
 #include <b10/detail/width_of.hpp>
 #include <b10/detail/builtin_uint.hpp>
+#include <b10/detail/have_builtin_add_overflow.hpp>
 
 #include <b10/detail/thirdparty/hedley.h>
 
 #include <bit>
+#include <type_traits>
 
 namespace b10::detail {
 namespace stacked_uint_detail {
@@ -251,6 +253,14 @@ HEDLEY_ALWAYS_INLINE constexpr
 auto addc(T x, T y)
 -> addc_result<T>
 {
+    #if B10_DETAIL_HAVE_BUILTIN_ADD_OVERFLOW
+        if (!std::is_constant_evaluated()) {
+            T r;
+            bool c = __builtin_add_overflow(x, y, &r);
+            return {r, c};
+        }
+    #endif
+
     auto r = x + y;
     return {r, r < x};
 }
