@@ -295,7 +295,7 @@ namespace stacked_uint_detail {
 
 template <builtin_unsigned_integral T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto subtract(T x, T y, bool& b)
+auto sub(T x, T y, bool& b)
 -> T
 {
     #if B10_DETAIL_HAVE_BUILTIN_SUB_OVERFLOW
@@ -319,13 +319,13 @@ auto subtract(T x, T y, bool& b)
 
 template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
-auto subtract(stacked_uint<T> x, stacked_uint<T> y, bool& b)
+auto sub(stacked_uint<T> x, stacked_uint<T> y, bool& b)
 -> stacked_uint<T>
 {
     stacked_uint<T> r;
 
-    r.lo = subtract(x.lo, y.lo, c);
-    r.hi = subtract(x.hi, y.hi, c);
+    r.lo = sub(x.lo, y.lo, c);
+    r.hi = sub(x.hi, y.hi, c);
 
     return r;
 }
@@ -338,7 +338,7 @@ auto operator-(stacked_uint<T> x, stacked_uint<T> y)
 -> stacked_uint<T>
 {
     bool b = 0;
-    return stacked_uint_detail::subtract(x, y, b);
+    return stacked_uint_detail::sub(x, y, b);
 }
 
 } // namespace b10::detail
