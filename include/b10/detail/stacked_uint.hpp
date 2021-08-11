@@ -275,10 +275,16 @@ auto addc(T x, T y, bool c)
     return {r, c1 | c2};
 }
 
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto add(T x, T y, bool c)
+-> T
+{ return x + y + c; }
+
 template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
 auto addc(stacked_uint<T> x, stacked_uint<T> y)
--> addc_result<T>
+-> addc_result<stacked_uint<T>>
 {
     auto [r_lo, c1] = addc(x.lo, y.lo);
     auto [r_hi, c2] = addc(x.hi, y.hi, c1);
@@ -288,11 +294,21 @@ auto addc(stacked_uint<T> x, stacked_uint<T> y)
 template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
 auto addc(stacked_uint<T> x, stacked_uint<T> y, bool c)
--> addc_result<T>
+-> addc_result<stacked_uint<T>>
 {
     auto [r_lo, c1] = addc(x.lo, y.lo, c);
     auto [r_hi, c2] = addc(x.hi, y.hi, c1);
     return {cat(r_hi, r_lo), c2};
+}
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto add(stacked_uint<T> x, stacked_uint<T> y, bool c)
+-> stacked_uint<T>
+{
+    auto [r_lo, c1] = addc(x.lo, y.lo, c);
+    auto r_hi = add(x.hi, y.hi, c1);
+    return cat(r_hi, r_lo);
 }
 
 } // namespace stacked_uint_detail
@@ -305,7 +321,7 @@ auto operator+(stacked_uint<T> x, stacked_uint<T> y)
     using namespace stacked_uint_detail;
 
     auto [r_lo, c] = addc(x.lo, y.lo);
-    auto r_hi = x.hi + y.hi + c;
+    auto r_hi = add(x.hi, y.hi, c);
     return cat(r_hi, r_lo);
 }
 
