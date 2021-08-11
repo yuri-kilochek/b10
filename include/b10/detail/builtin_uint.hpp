@@ -49,23 +49,15 @@ template <typename T>
 concept builtin_unsigned_integral = std::same_as<T, builtin_uint<width_of<T>>>;
 
 template <builtin_unsigned_integral T>
-requires requires { typename builtin_uint<width_of<T> * 2>; }
 HEDLEY_ALWAYS_INLINE constexpr
-auto wmul(T x, T y)
+auto mul(T x, T y)
 -> builtin_uint<width_of<T> * 2>
 { return (builtin_uint<width_of<T> * 2>)x * y; }
 
 template <builtin_unsigned_integral X, builtin_unsigned_integral Y>
-requires (width_of<X> == 2 * width_of<Y>)
 HEDLEY_ALWAYS_INLINE constexpr
-auto wdivmod(X x, Y y)
+auto divmod(X x, Y y)
 -> divmod_result<Y>
-{ return {x / y, x % y}; }
-
-template <builtin_unsigned_integral T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto divmod(T x, T y)
--> divmod_result<T>
 { return {x / y, x % y}; }
 
 } // namespace b10::detail
