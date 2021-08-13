@@ -91,45 +91,6 @@ struct stacked_uint
     }
 };
 
-namespace stacked_uint_detail {
-
-template <typename T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto lo(T x) {
-    if constexpr(builtin_unsigned_integral<T>) {
-        return builtin_uint<width_of<T> / 2>(x);
-    } else {
-        return x.lo;
-    }
-}
-
-template <typename T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto hi(T x) {
-    if constexpr(builtin_unsigned_integral<T>) {
-        return builtin_uint<width_of<T> / 2>(x >> (width_of<T> / 2));
-    } else {
-        return x.hi;
-    }
-}
-
-template <typename T>
-HEDLEY_ALWAYS_INLINE constexpr
-auto cat(T hi, T lo) {
-    if constexpr(requires { typename builtin_uint<width_of<T> * 2>; }) {
-        return (builtin_uint<width_of<T> * 2>(hi) << width_of<T>) | lo;
-    } else {
-        stacked_uint<T> r;
-
-        r.lo = lo;
-        r.hi = hi;
-
-        return r;
-    }
-}
-
-} // namespace stacked_uint_detail
-
 template <typename T>
 HEDLEY_ALWAYS_INLINE constexpr
 auto operator==(stacked_uint<T> x, stacked_uint<T> y)
@@ -339,6 +300,73 @@ auto operator-(stacked_uint<T> x, stacked_uint<T> y)
 {
     bool b = 0;
     return stacked_uint_detail::sub(x, y, b);
+}
+
+namespace stacked_uint_detail {
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto lo(T x)
+-> builtin_uint<width_of<T> / 2>
+{ return x; }
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto lo(stacked_uint<T> x)
+-> T
+{ return x.lo; }
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto hi(T x)
+-> builtin_uint<width_of<T> / 2>
+{ return x >> (width_of<T> / 2); }
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto hi(stacked_uint<T> x)
+-> T
+{ return x.hi; }
+
+template <builtin_unsigned_integral T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto cat(T hi, T lo)
+-> builtin_uint<width_of<T> * 2>
+{ return (builtin_uint<width_of<T> * 2>(hi) << width_of<T>) | lo; }
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto cat(T hi, T lo)
+-> stacked_uint<T>
+{
+    stacked_uint<T> r;
+
+    r.lo = lo;
+    r.hi = hi;
+
+    return r;
+}
+
+} // namespace stacked_uint_detail
+
+template <typename T>
+HEDLEY_ALWAYS_INLINE constexpr
+auto mul(T x, T y)
+-> stacked_uint<T>
+{
+    using namespace stacked_uint_detail;
+
+    auto x_lo = lo(x);
+    auto x_hi = hi(x);
+    auto y_lo = lo(y);
+    auto y_hi = hi(y);
+
+    T a = mul(x_lo, y_lo);
+    T b = mul(x_lo, y_hi);
+    T c = mul(x_hi, y_lo) + hi(a) + lo(b);
+    T d = mul(x_hi, y_hi) + hi(b) + hi(c);
+
+    return cat(d, cat(lo(c), lo(a)));
 }
 
 } // namespace b10::detail
