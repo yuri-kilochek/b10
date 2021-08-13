@@ -26,7 +26,6 @@ struct select<Width> {
 };
 
 template <std::size_t Width>
-requires (Width % 2u == 0u)
 struct select {
     using type = stacked_uint<uint<Width / 2>>;
 };
